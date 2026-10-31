@@ -1,1 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROYAL CHESS</title>
 
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #080808;
+  color: white;
+  font-family: Arial, sans-serif;
+  padding: 20px;
+}
+
+header {
+  text-align: center;
+  padding: 30px 0;
+}
+
+.king {
+  font-size: 65px;
+  color: gold;
+}
+
+h1 {
+  color: #e6bd54;
+  letter-spacing: 5px;
+  font-size: 29px;
+  margin-top: 10px;
+}
+
+.tagline {
+  color: #aaa;
+  letter-spacing: 3px;
+  font-size: 11px;
+  margin-top: 10px;
+}
+
+.profile {
+  background: linear-gradient(135deg,#252017,#111);
+  border: 1px solid #94752d;
+  border-radius: 15px;
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.profile h2 {
+  color: #e6bd54;
+  margin-bottom: 15px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.stat {
+  background: #191919;
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.stat strong {
+  display: block;
+  color: gold;
+  font-size: 23px;
+  margin-top: 8px;
+}
+
+.section-title {
+  color: #e6bd54;
+  margin: 28px 0 15px;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.card {
+  background: linear-gradient(145deg,#211d14,#111);
+  border: 1px solid #655124;
+  border-radius: 13px;
+  padding: 20px 10px;
+  text-align: center;
+  min-height: 115px;
+  cursor: pointer;
+}
+
+.card:active {
+  background: #493a1b;
+}
+
+.icon {
+  font-size: 30px;
+  margin-bottom: 10px;
+}
+
+.card h3 {
+  color: #f0d58b;
+  font-size: 14px;
+}
+
+footer {
+  text-align: center;
+  color: #777;
+  margin: 35px 0 15px;
+  font-size: 12px;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="king">♛</div>
+  <h1>ROYAL CHESS</h1>
+  <p class="tagline">THINK. PLAN. DOMINATE.</p>
+</header>
+
+<section class="profile">
+  <h2>♔ PLAYER DASHBOARD</h2>
+
+  <div class="stats">
+    <div class="stat">
+      Current Rating
+      <strong>1200</strong>
+    </div>
+
+    <div class="stat">
+      Highest Rating
+      <strong>1200</strong>
+    </div>
+
+    <div class="stat">
+      Total Wins
+      <strong>0</strong>
+    </div>
+
+    <div class="stat">
+      Winning Streak
+      <strong>0</strong>
+    </div>
+  </div>
+</section>
+
+<h2 class="section-title">♟ CHESS ARENA</h2>
+
+<div class="features">
+
+  <div class="card" onclick="show('Play

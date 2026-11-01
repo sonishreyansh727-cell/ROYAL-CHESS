@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROYAL CHESS</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#090909;color:#f5d77a;font-family:Arial,sans-serif;text-align:center}
+header{padding:22px;background:#111;border-bottom:1px solid #b99335}
+h1{margin:0;font-size:30px;letter-spacing:4px}
+.tag{color:#aaa;margin-top:8px}
+main{max-width:600px;margin:auto;padding:18px}
+.card{background:#171717;border:1px solid #9d792b;border-radius:14px;padding:16px;margin:15px 0}
+h2{color:#e7bd53}
+#status{color:white;margin:15px}
+#board{width:min(90vw,440px);height:min(90vw,440px);margin:15px auto;display:grid;grid-template-columns:repeat(8,1fr);border:4px solid #b38a35}
+.square{display:flex;align-items:center;justify-content:center;font-size:clamp(25px,8vw,48px);cursor:pointer;position:relative}
+.light{background:#ead9b5}
+.dark{background:#987044}
+.selected{outline:4px solid #e6c34e;outline-offset:-4px}
+button{background:#bd963c;color:#111;border:0;border-radius:8px;padding:12px 18px;margin:6px;font-weight:bold;font-size:15px}
+button:active{transform:scale(.97)}
+footer{color:#777;padding:25px}
+</style>
+</head>
+<body>
+<header>
+<h1>♛ ROYAL CHESS</h1>
+<div class="tag">THINK. PLAN. DOMINATE.</div>
+</header>
+
+<main>
+<div class="card">
+<h2>♟ CHESS ARENA</h2>
+<p>Play Chess — Two Players</p>
+<div id="status">White's turn</div>
+<div id="board"></div>
+<button onclick="resetGame()">New Game</button>
+<button onclick="undoMove()">Undo Move</button>
+<button onclick="flipBoard()">Flip Board</button>
+</div>
+
+<div class="card">
+<h2>ROYAL CHESS</h2>
+<p>Think smart. Play better. Become a champion.</p>
+</div>
+</main>
+
+<footer>ROYAL CHESS © 2026</footer>
+
+<script>
+const game = new Chess();
+const board = document.getElementById("board");
+
+const pieces = {
+w:{k:"♔",q:"♕",r:"♖",b:"♗",n:"♘",p:"♙"},
+b:{k:"♚",q:"♛",r:"♜",b:"♝",n:"♞",p:"♟"}
+};
+
+let selected = null;
+let flipped = false;
+
+function drawBoard(){
+ board.innerHTML="";
+ let files = flipped ? "hgfedcba" : "abcdefgh";
+ let ranks = flipped ? "12345678" : "87654321";
+
+ for(let r=0;r<8;r++){
+  for(let c=0;c<8;c++){
+   let square=document.createElement("div");
+   let file=files[c], rank=ranks[r];
+   let pos=file+rank;
+   let piece=game.get(pos);
+
+   square.className="square "+((r+c)%2===0?"light":"dark");
+   if(selected===pos) square.classList.add("selected");
+   if(piece) square.textContent=pieces[piece.color][piece.type];
+
+   square.onclick=()=>clickSquare(pos);
+   board.appendChild(square);
+  }
+ }
+ updateStatus();
+}
+
+function clickSquare(pos){
+ if(selected){
+  let moves=game.moves({square:selected,verbose:true});
+  let move=moves.find(m=>m.to===pos);
+
+  if(move){
+   game.move({from:selected,to:pos,promotion:"q"});
+   selected=null;
+   drawBoard();
+   return;
+  }
+ }
+
+ let piece=game.get(pos);
+ if(piece && piece.color===game.turn()){
+  selected=pos;
+ }else{
+  selected=null;
+ }
+ drawBoard();
+}
+
+function updateStatus(){
+ let status=game.turn()==="w"?"White":"Black";
+ if(game.isCheckmate()){
+  document.getElementById("status").textContent="Checkmate! "+(status==="White"?"Black":"White")+" wins!";
+ }else if(game.isDraw()){
+  document.getElementById("status").textContent="Game Draw!";
+ }else{
+  document.getElementById("status").textContent=status+"'s turn"+(game.isCheck()?" — Check!":"");
+ }
+}
+
+function resetGame(){
+ game.reset();
+ selected=null;
+ drawBoard();
+}
+
+function undoMove(){
+ game.undo();
+ selected=null;
+ drawBoard();
+}
+
+function flipBoard(){
+ flipped=!flipped;
+ drawBoard();
+}
+
+drawBoard();
+</script>
+</body>
+</html>

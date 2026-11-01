@@ -110,7 +110,10 @@ footer{color:#777;padding:25px}
 <h2>♟ CHESS ARENA</h2>
 <p>Play Chess — Two Players</p>
 <div id="status">White's turn</div>
-<div id="board"></div>
+<div id="board"></div><div class="card">
+  <h2>📜 MOVE HISTORY</h2>
+  <ol id="moveHistory"></ol>
+</div>
 <button onclick="resetGame()">New Game</button>
 <button onclick="undoMove()">Undo Move</button>
 <button onclick="flipBoard()">Flip Board</button>
@@ -180,7 +183,22 @@ function clickSquare(pos){
  }
  drawBoard();
 }
+function updateMoveHistory( updateMoveHistory();){
+ let history = document.getElementById("moveHistory");
+ let moves = game.history();
 
+ history.innerHTML = "";
+
+ moves.forEach((move, index) => {
+  if(index % 2 === 0){
+   let li = document.createElement("li");
+   li.textContent = Math.floor(index / 2) + 1 + ". " + move;
+   history.appendChild(li);
+  } else {
+   history.lastElementChild.textContent += "   " + move;
+  }
+ });
+   }
 function updateStatus(){
  let status=game.turn()==="w"?"White":"Black";
  if(game.isCheckmate()){
@@ -208,7 +226,7 @@ function flipBoard(){
  flipped=!flipped;
  drawBoard();
 }
-
+updateMoveHistory();
 drawBoard();
 </script>
 </body>

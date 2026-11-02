@@ -4,159 +4,214 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ROYAL CHESS</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+*{box-sizing:border-box}
+body{
+ margin:0;
+ background:radial-gradient(circle at top,#292316,#080808 75%);
+ color:#f5d77a;
+ font-family:Arial,sans-serif;
+ text-align:center;
 }
-
-body {
-  background: #080808;
-  color: white;
-  font-family: Arial, sans-serif;
-  padding: 20px;
+header{padding:22px 10px}
+h1{font-size:32px;letter-spacing:5px;margin:5px}
+header p{color:#c5a04b;letter-spacing:3px}
+.card{
+ max-width:520px;
+ margin:15px auto;
+ padding:16px;
+ background:#15130f;
+ border:1px solid #a9863b;
+ border-radius:14px;
 }
-
-header {
-  text-align: center;
-  padding: 30px 0;
+#status{font-size:18px;margin:10px}
+#board{
+ display:grid;
+ grid-template-columns:repeat(8,1fr);
+ grid-template-rows:repeat(8,1fr);
+ width:min(90vw,440px);
+ aspect-ratio:1;
+ margin:15px auto;
+ border:5px solid #c5a04b;
+ border-radius:5px;
+ overflow:hidden;
 }
-
-.king {
-  font-size: 65px;
-  color: gold;
+.square{
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ font-size:clamp(25px,8vw,48px);
+ cursor:pointer;
+ user-select:none;
 }
-
-h1 {
-  color: #e6bd54;
-  letter-spacing: 5px;
-  font-size: 29px;
-  margin-top: 10px;
+.light{background:#f0dfb8}
+.dark{background:#795735}
+.selected{background:#e5bd50!important}
+button{
+ background:linear-gradient(135deg,#f5d77a,#b68a30);
+ color:#17120c;
+ border:0;
+ border-radius:9px;
+ padding:12px 16px;
+ margin:5px;
+ font-weight:bold;
+ cursor:pointer;
 }
-
-.tagline {
-  color: #aaa;
-  letter-spacing: 3px;
-  font-size: 11px;
-  margin-top: 10px;
+button:active{transform:scale(.96)}
+#moveHistory{
+ text-align:left;
+ color:#eee;
+ max-height:150px;
+ overflow:auto;
 }
-
-.profile {
-  background: linear-gradient(135deg,#252017,#111);
-  border: 1px solid #94752d;
-  border-radius: 15px;
-  padding: 20px;
-  margin: 20px 0;
-}
-
-.profile h2 {
-  color: #e6bd54;
-  margin-bottom: 15px;
-}
-
-.stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.stat {
-  background: #191919;
-  padding: 15px;
-  border-radius: 10px;
-  text-align: center;
-}
-
-.stat strong {
-  display: block;
-  color: gold;
-  font-size: 23px;
-  margin-top: 8px;
-}
-
-.section-title {
-  color: #e6bd54;
-  margin: 28px 0 15px;
-}
-
-.features {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.card {
-  background: linear-gradient(145deg,#211d14,#111);
-  border: 1px solid #655124;
-  border-radius: 13px;
-  padding: 20px 10px;
-  text-align: center;
-  min-height: 115px;
-  cursor: pointer;
-}
-
-.card:active {
-  background: #493a1b;
-}
-
-.icon {
-  font-size: 30px;
-  margin-bottom: 10px;
-}
-
-.card h3 {
-  color: #f0d58b;
-  font-size: 14px;
-}
-
-footer {
-  text-align: center;
-  color: #777;
-  margin: 35px 0 15px;
-  font-size: 12px;
-}
-
+footer{padding:20px;color:#9d8756;font-size:12px}
 </style>
 </head>
 
 <body>
 
 <header>
-  <div class="king">♛</div>
-  <h1>ROYAL CHESS</h1>
-  <p class="tagline">THINK. PLAN. DOMINATE.</p>
+<h1>♛ ROYAL CHESS</h1>
+<p>THINK. PLAN. DOMINATE.</p>
 </header>
 
-<section class="profile">
-  <h2>♔ PLAYER DASHBOARD</h2>
+<div class="card">
+ <div id="status">Loading chess...</div>
+ <div id="board"></div>
 
-  <div class="stats">
-    <div class="stat">
-      Current Rating
-      <strong>1200</strong>
-    </div>
+ <button onclick="resetGame()">New Game</button>
+ <button onclick="undoMove()">Undo</button>
+ <button onclick="flipBoard()">Flip Board</button>
+</div>
 
-    <div class="stat">
-      Highest Rating
-      <strong>1200</strong>
-    </div>
+<div class="card">
+ <h3>♟ MOVE HISTORY</h3>
+ <ol id="moveHistory"></ol>
+</div>
 
-    <div class="stat">
-      Total Wins
-      <strong>0</strong>
-    </div>
+<footer>ROYAL CHESS • YOUR GAME. YOUR KINGDOM.</footer>
 
-    <div class="stat">
-      Winning Streak
-      <strong>0</strong>
-    </div>
-  </div>
-</section>
+<script>
+const game = new Chess();
+const board = document.getElementById("board");
 
-<h2 class="section-title">♟ CHESS ARENA</h2>
+let selected = null;
+let flipped = false;
 
-<div class="features">
+const pieces = {
+ w:{k:"♔",q:"♕",r:"♖",b:"♗",n:"♘",p:"♙"},
+ b:{k:"♚",q:"♛",r:"♜",b:"♝",n:"♞",p:"♟"}
+};
 
-  <div class="card" onclick="show('Play
+function drawBoard(){
+ board.innerHTML="";
+ const position=game.board();
+
+ for(let r=0;r<8;r++){
+  for(let c=0;c<8;c++){
+   const row=flipped?7-r:r;
+   const col=flipped?7-c:c;
+   const sq=document.createElement("div");
+
+   sq.className="square "+((row+col)%2===0?"light":"dark");
+   const piece=position[row][col];
+
+   if(piece){
+    sq.textContent=pieces[piece.color][piece.type];
+   }
+
+   const squareName="abcdefgh"[col]+(8-row);
+
+   if(selected===squareName){
+    sq.classList.add("selected");
+   }
+
+   sq.onclick=()=>handleSquare(squareName);
+   board.appendChild(sq);
+  }
+ }
+ updateStatus();
+ updateHistory();
+}
+
+function handleSquare(square){
+ if(game.game_over()) return;
+
+ if(selected){
+  const move=game.move({
+   from:selected,
+   to:square,
+   promotion:"q"
+  });
+
+  selected=null;
+
+  if(move){
+   drawBoard();
+   return;
+  }
+ }
+
+ const piece=game.get(square);
+
+ if(piece && piece.color===game.turn()){
+  selected=square;
+ }else{
+  selected=null;
+ }
+
+ drawBoard();
+}
+
+function updateStatus(){
+ let message=game.turn()==="w"?"White's turn":"Black's turn";
+
+ if(game.in_checkmate()){
+  message="CHECKMATE! "+(game.turn()==="w"?"Black":"White")+" wins!";
+ }else if(game.in_draw()){
+  message="GAME DRAW!";
+ }else if(game.in_check()){
+  message+=" — CHECK!";
+ }
+
+ document.getElementById("status").textContent=message;
+}
+
+function updateHistory(){
+ const list=document.getElementById("moveHistory");
+ list.innerHTML="";
+
+ game.history().forEach((move,index)=>{
+  if(index%2===0){
+   const li=document.createElement("li");
+   li.textContent=Math.floor(index/2)+1+". "+move;
+   list.appendChild(li);
+  }else{
+   list.lastElementChild.textContent+="   "+move;
+  }
+ });
+}
+
+function resetGame(){
+ game.reset();
+ selected=null;
+ drawBoard();
+}
+
+function undoMove(){
+ game.undo();
+ selected=null;
+ drawBoard();
+}
+
+function flipBoard(){
+ flipped=!flipped;
+ drawBoard();
+}
+
+drawBoard();
+</script>
+</body>
+</html>

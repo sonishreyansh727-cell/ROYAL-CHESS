@@ -3,215 +3,110 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ROYAL CHESS</title>
+<meta name="theme-color" content="#090909">
+<title>ROYAL CHESS — Think. Plan. Dominate.</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-
 <style>
-*{box-sizing:border-box}
-body{
- margin:0;
- background:radial-gradient(circle at top,#292316,#080808 75%);
- color:#f5d77a;
- font-family:Arial,sans-serif;
- text-align:center;
-}
-header{padding:22px 10px}
-h1{font-size:32px;letter-spacing:5px;margin:5px}
-header p{color:#c5a04b;letter-spacing:3px}
-.card{
- max-width:520px;
- margin:15px auto;
- padding:16px;
- background:#15130f;
- border:1px solid #a9863b;
- border-radius:14px;
-}
-#status{font-size:18px;margin:10px}
-#board{
- display:grid;
- grid-template-columns:repeat(8,1fr);
- grid-template-rows:repeat(8,1fr);
- width:min(90vw,440px);
- aspect-ratio:1;
- margin:15px auto;
- border:5px solid #c5a04b;
- border-radius:5px;
- overflow:hidden;
-}
-.square{
- display:flex;
- align-items:center;
- justify-content:center;
- font-size:clamp(25px,8vw,48px);
- cursor:pointer;
- user-select:none;
-}
-.light{background:#f0dfb8}
-.dark{background:#795735}
-.selected{background:#e5bd50!important}
-button{
- background:linear-gradient(135deg,#f5d77a,#b68a30);
- color:#17120c;
- border:0;
- border-radius:9px;
- padding:12px 16px;
- margin:5px;
- font-weight:bold;
- cursor:pointer;
-}
-button:active{transform:scale(.96)}
-#moveHistory{
- text-align:left;
- color:#eee;
- max-height:150px;
- overflow:auto;
-}
-footer{padding:20px;color:#9d8756;font-size:12px}
+:root{--bg:#090909;--panel:#14130f;--panel2:#1b1913;--gold:#d8b45b;--gold2:#f5df9a;--muted:#a69a7c;--line:#4c3d1e;--white:#f6f0df}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 50% -15%,#3b2d12 0,#11100d 35%,#080808 72%);color:var(--white);font-family:Inter,system-ui,Arial,sans-serif;min-height:100vh}
+button{font:inherit}.app{max-width:1240px;margin:auto;padding:0 18px 95px}.topbar{height:76px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff14;position:sticky;top:0;background:#090909eF;backdrop-filter:blur(14px);z-index:5}
+.brand{display:flex;align-items:center;gap:12px}.brandmark{width:43px;height:43px;border:1px solid var(--gold);border-radius:13px;display:grid;place-items:center;color:var(--gold2);font-size:27px;background:linear-gradient(145deg,#302613,#100e09);box-shadow:0 0 24px #c69b3530}.brandname{font-weight:900;letter-spacing:3px;font-size:17px}.tag{font-size:9px;color:var(--gold);letter-spacing:2.8px;margin-top:3px}.topright{display:flex;align-items:center;gap:10px}.pill{border:1px solid var(--line);background:#17150f;color:var(--gold2);padding:9px 13px;border-radius:99px;font-size:12px}.avatar{width:37px;height:37px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#f1d68b,#8a6425);color:#171109;font-weight:900}
+.hero{margin:26px 0 20px;padding:30px 30px 27px;border:1px solid #a47c324d;border-radius:22px;background:linear-gradient(110deg,#211b10ed,#11100df0 58%,#21190d);position:relative;overflow:hidden;box-shadow:0 18px 55px #0008}.hero:after{content:"♛";position:absolute;right:8%;top:-37px;font-size:190px;color:#d7b45b12;line-height:1}.eyebrow{color:var(--gold);font-size:10px;letter-spacing:3px;font-weight:800}.hero h1{font-size:clamp(27px,5vw,48px);line-height:1.08;margin:12px 0 9px;max-width:650px}.hero h1 span{color:var(--gold2)}.hero p{color:#bcb29b;max-width:550px;line-height:1.6;font-size:14px}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:21px}.btn{border:1px solid var(--gold);border-radius:10px;padding:12px 17px;background:linear-gradient(135deg,#f2d68b,#b88a36);color:#17120a;font-weight:850;font-size:12px;cursor:pointer}.btn.secondary{background:#17150f;color:var(--gold2);border-color:#665126}.sectionhead{display:flex;align-items:end;justify-content:space-between;margin:28px 2px 13px}.sectionhead h2{font-size:17px;letter-spacing:1px;margin:0}.sectionhead small{color:var(--muted);font-size:11px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.stat,.feature,.panel{background:linear-gradient(145deg,#1b1913,#11110f);border:1px solid #8c6b303d;border-radius:15px}.stat{padding:17px}.statlabel{font-size:10px;color:var(--muted);letter-spacing:1.4px}.statvalue{font-size:25px;font-weight:850;color:var(--gold2);margin-top:8px}.statnote{font-size:10px;color:#8e846e;margin-top:3px}.features{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.feature{padding:17px;text-align:left;cursor:pointer;color:var(--white);min-height:128px;transition:.2s}.feature:hover{border-color:var(--gold);transform:translateY(-2px);background:#211c11}.icon{font-size:25px;margin-bottom:12px}.feature b{display:block;font-size:13px}.feature span{display:block;color:var(--muted);font-size:10px;margin-top:6px;line-height:1.45}.feature .soon{color:var(--gold);font-size:9px;letter-spacing:1px;margin-top:9px}.playarea{display:none;margin-top:18px}.playarea.active{display:block}.playgrid{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:14px}.panel{padding:16px}.boardwrap{max-width:510px;margin:auto}.board{display:grid;grid-template-columns:repeat(8,1fr);width:100%;aspect-ratio:1;border:5px solid #b58b3b;border-radius:7px;overflow:hidden;box-shadow:0 0 35px #c49a3a20}.sq{display:grid;place-items:center;aspect-ratio:1;font-size:clamp(24px,6.5vw,49px);cursor:pointer;user-select:none;line-height:1}.sq.light{background:#e9d8b2;color:#17130e}.sq.dark{background:#795936;color:#fff}.sq.selected{background:#d8b34d!important;box-shadow:inset 0 0 0 4px #fff0a6}.sq.hint{position:relative}.sq.hint:after{content:"";width:22%;height:22%;border-radius:50%;background:#16130b55;position:absolute}.boardcontrols{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin-top:12px}.mini{font-size:11px;padding:9px 12px}.status{text-align:center;color:var(--gold2);font-weight:700;margin:0 0 12px}.sideTitle{color:var(--gold);font-size:11px;letter-spacing:1.5px;margin:2px 0 12px}.history{max-height:240px;overflow:auto;padding-left:22px;color:#ddd;font-size:12px;line-height:1.9}.notice{font-size:11px;color:var(--muted);line-height:1.6}.bottomnav{position:fixed;bottom:0;left:0;right:0;z-index:8;background:#0b0b0bf2;border-top:1px solid #72582766;display:flex;justify-content:center;gap:clamp(10px,5vw,60px);padding:10px 8px calc(10px + env(safe-area-inset-bottom));backdrop-filter:blur(15px)}.navitem{border:0;background:none;color:#92866c;font-size:10px;display:grid;gap:4px;justify-items:center;cursor:pointer;min-width:48px}.navitem strong{font-size:19px;font-weight:400}.navitem.active{color:var(--gold2)}.toast{position:fixed;left:50%;bottom:85px;transform:translateX(-50%);background:#211b10;border:1px solid var(--gold);padding:11px 15px;border-radius:10px;color:var(--gold2);font-size:12px;display:none;z-index:20;max-width:90%;text-align:center}.footer{text-align:center;color:#74684e;font-size:10px;margin:30px 0 5px;letter-spacing:1px}
+@media(max-width:760px){.stats{grid-template-columns:repeat(2,1fr)}.features{grid-template-columns:repeat(2,1fr)}.playgrid{grid-template-columns:1fr}.hero{padding:24px 20px}.topbar{height:66px}.pill{display:none}}
+@media(min-width:761px){.playarea .board{max-width:480px}}
 </style>
 </head>
-
 <body>
-
-<header>
-<h1>♛ ROYAL CHESS</h1>
-<p>THINK. PLAN. DOMINATE.</p>
+<div class="app">
+<header class="topbar">
+ <div class="brand"><div class="brandmark">♛</div><div><div class="brandname">ROYAL CHESS</div><div class="tag">THINK. PLAN. DOMINATE.</div></div></div>
+ <div class="topright"><div class="pill">♟ &nbsp; Guest Player</div><div class="avatar">R</div></div>
 </header>
-
-<div class="card">
- <div id="status">Loading chess...</div>
- <div id="board"></div>
-
- <button onclick="resetGame()">New Game</button>
- <button onclick="undoMove()">Undo</button>
- <button onclick="flipBoard()">Flip Board</button>
+<main id="home">
+ <section class="hero">
+  <div class="eyebrow">WELCOME TO YOUR KINGDOM</div>
+  <h1>Every move tells a story.<br><span>Make yours legendary.</span></h1>
+  <p>Sharpen your mind, master the board, and make every move count. Your royal journey starts here.</p>
+  <div class="actions"><button class="btn" onclick="openPlay()">♟ &nbsp; PLAY CHESS</button><button class="btn secondary" onclick="showNotice('Your learning academy is being prepared.')">EXPLORE ACADEMY</button></div>
+ </section>
+ <div class="sectionhead"><h2>YOUR OVERVIEW</h2><small>Local demo profile</small></div>
+ <section class="stats">
+  <div class="stat"><div class="statlabel">RAPID RATING</div><div class="statvalue">—</div><div class="statnote">Connect an account to track rating</div></div>
+  <div class="stat"><div class="statlabel">HIGHEST RATING</div><div class="statvalue">—</div><div class="statnote">Your peak will appear here</div></div>
+  <div class="stat"><div class="statlabel">TOTAL WINS</div><div class="statvalue">0</div><div class="statnote">No games recorded yet</div></div>
+  <div class="stat"><div class="statlabel">WIN STREAK</div><div class="statvalue">0</div><div class="statnote">Start your first game</div></div>
+ </section>
+ <div class="sectionhead"><h2>ENTER THE ARENA</h2><small>Choose your next challenge</small></div>
+ <section class="features">
+  <button class="feature" onclick="openPlay()"><div class="icon">♟</div><b>Play Chess</b><span>Challenge the board and test your skill.</span></button>
+  <button class="feature" onclick="showNotice('AI Coach is planned. It is not connected yet.')"><div class="icon">✦</div><b>AI Coach</b><span>Personal guidance for your chess journey.</span><div class="soon">IN DEVELOPMENT</div></button>
+  <button class="feature" onclick="showNotice('Game analysis engine is not connected yet.')"><div class="icon">⌁</div><b>Game Analysis</b><span>Review moves and discover better ideas.</span><div class="soon">IN DEVELOPMENT</div></button>
+  <button class="feature" onclick="showNotice('Chess DNA needs game history and analysis.')"><div class="icon">♜</div><b>Chess DNA</b><span>Explore your playing style and strengths.</span><div class="soon">PLANNED</div></button>
+  <button class="feature" onclick="showNotice('Daily puzzle feature is planned.')"><div class="icon">◇</div><b>Daily Puzzles</b><span>A fresh tactical challenge every day.</span><div class="soon">PLANNED</div></button>
+  <button class="feature" onclick="showNotice('Chess Academy lessons are planned.')"><div class="icon">♙</div><b>Chess Academy</b><span>Learn openings, tactics, and endgames.</span><div class="soon">PLANNED</div></button>
+  <button class="feature" onclick="showNotice('Tournament system is planned; no live events yet.')"><div class="icon">♛</div><b>Tournaments</b><span>Compete and climb the royal ranks.</span><div class="soon">PLANNED</div></button>
+  <button class="feature" onclick="showNotice('Online leaderboard needs accounts and a server.')"><div class="icon">🏆</div><b>Leaderboard</b><span>See how you rank among players.</span><div class="soon">PLANNED</div></button>
+ </section>
+</main>
+<section id="play" class="playarea">
+ <div class="sectionhead"><h2>PLAY CHESS</h2><small>Local two-player demo</small></div>
+ <div class="playgrid">
+  <div class="panel">
+   <div id="status" class="status">White to move</div>
+   <div class="boardwrap"><div id="board" class="board" aria-label="Chess board"></div></div>
+   <div class="boardcontrols">
+    <button class="btn mini" onclick="newGame()">NEW GAME</button>
+    <button class="btn secondary mini" onclick="undoMove()">UNDO</button>
+    <button class="btn secondary mini" onclick="flipBoard()">FLIP BOARD</button>
+    <button class="btn secondary mini" onclick="backHome()">DASHBOARD</button>
+   </div>
+  </div>
+  <aside class="panel">
+   <div class="sideTitle">MOVE HISTORY</div><ol id="history" class="history"></ol>
+   <hr style="border:0;border-top:1px solid #ffffff18;margin:16px 0">
+   <div class="sideTitle">GAME MODE</div><p style="font-size:13px">Pass & Play</p>
+   <p class="notice">This first version supports legal local two-player chess, move history, undo, board flip, checkmate and draw detection. Online multiplayer, accounts, ratings, Stockfish analysis and AI coaching require additional backend/engine work and are not active yet.</p>
+  </aside>
+ </div>
+</section>
+<div class="footer">ROYAL CHESS · BUILT FOR THE LOVE OF THE GAME</div>
 </div>
-
-<div class="card">
- <h3>♟ MOVE HISTORY</h3>
- <ol id="moveHistory"></ol>
-</div>
-
-<footer>ROYAL CHESS • YOUR GAME. YOUR KINGDOM.</footer>
-
+<nav class="bottomnav">
+ <button class="navitem active" onclick="backHome()"><strong>⌂</strong>Home</button>
+ <button class="navitem" onclick="openPlay()"><strong>♟</strong>Play</button>
+ <button class="navitem" onclick="showNotice('Learning features are coming in a future update.')"><strong>▤</strong>Learn</button>
+ <button class="navitem" onclick="showNotice('Community features require online accounts and a backend.')"><strong>♧</strong>Community</button>
+ <button class="navitem" onclick="showNotice('Player profiles will be available after account setup.')"><strong>◉</strong>Profile</button>
+</nav>
+<div id="toast" class="toast"></div>
 <script>
-const game = new Chess();
-const board = document.getElementById("board");
-
-let selected = null;
-let flipped = false;
-
-const pieces = {
- w:{k:"♔",q:"♕",r:"♖",b:"♗",n:"♘",p:"♙"},
- b:{k:"♚",q:"♛",r:"♜",b:"♝",n:"♞",p:"♟"}
-};
-
+let game=null, selected=null, flipped=false;
+const glyph={w:{k:"♔",q:"♕",r:"♖",b:"♗",n:"♘",p:"♙"},b:{k:"♚",q:"♛",r:"♜",b:"♝",n:"♞",p:"♟"}};
+function initGame(){if(typeof Chess==="undefined"){document.getElementById("status").textContent="Chess engine could not load. Check your internet connection.";return}game=new Chess();drawBoard()}
 function drawBoard(){
- board.innerHTML="";
- const position=game.board();
-
- for(let r=0;r<8;r++){
-  for(let c=0;c<8;c++){
-   const row=flipped?7-r:r;
-   const col=flipped?7-c:c;
-   const sq=document.createElement("div");
-
-   sq.className="square "+((row+col)%2===0?"light":"dark");
-   const piece=position[row][col];
-
-   if(piece){
-    sq.textContent=pieces[piece.color][piece.type];
-   }
-
-   const squareName="abcdefgh"[col]+(8-row);
-
-   if(selected===squareName){
-    sq.classList.add("selected");
-   }
-
-   sq.onclick=()=>handleSquare(squareName);
-   board.appendChild(sq);
-  }
+ if(!game)return;const el=document.getElementById("board");el.innerHTML="";const pos=game.board();
+ for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+  const rr=flipped?7-r:r,cc=flipped?7-c:c,sq=document.createElement("button");sq.type="button";sq.className="sq "+((rr+cc)%2===0?"light":"dark");
+  const p=pos[rr][cc];if(p)sq.textContent=glyph[p.color][p.type];
+  const name="abcdefgh"[cc]+(8-rr);if(selected===name)sq.classList.add("selected");
+  sq.setAttribute("aria-label",name+(p?" "+p.color+" "+p.type:""));sq.onclick=()=>tapSquare(name);el.appendChild(sq);
  }
- updateStatus();
- updateHistory();
+ updateStatus();updateHistory();
 }
-
-function handleSquare(square){
- if(game.game_over()) return;
-
- if(selected){
-  const move=game.move({
-   from:selected,
-   to:square,
-   promotion:"q"
-  });
-
-  selected=null;
-
-  if(move){
-   drawBoard();
-   return;
-  }
- }
-
- const piece=game.get(square);
-
- if(piece && piece.color===game.turn()){
-  selected=square;
- }else{
-  selected=null;
- }
-
- drawBoard();
+function tapSquare(s){
+ if(!game||game.game_over())return;
+ if(selected){const m=game.move({from:selected,to:s,promotion:"q"});if(m){selected=null;drawBoard();return}}
+ const p=game.get(s);selected=p&&p.color===game.turn()?s:null;drawBoard();
 }
-
-function updateStatus(){
- let message=game.turn()==="w"?"White's turn":"Black's turn";
-
- if(game.in_checkmate()){
-  message="CHECKMATE! "+(game.turn()==="w"?"Black":"White")+" wins!";
- }else if(game.in_draw()){
-  message="GAME DRAW!";
- }else if(game.in_check()){
-  message+=" — CHECK!";
- }
-
- document.getElementById("status").textContent=message;
-}
-
-function updateHistory(){
- const list=document.getElementById("moveHistory");
- list.innerHTML="";
-
- game.history().forEach((move,index)=>{
-  if(index%2===0){
-   const li=document.createElement("li");
-   li.textContent=Math.floor(index/2)+1+". "+move;
-   list.appendChild(li);
-  }else{
-   list.lastElementChild.textContent+="   "+move;
-  }
- });
-}
-
-function resetGame(){
- game.reset();
- selected=null;
- drawBoard();
-}
-
-function undoMove(){
- game.undo();
- selected=null;
- drawBoard();
-}
-
-function flipBoard(){
- flipped=!flipped;
- drawBoard();
-}
-
-drawBoard();
+function updateStatus(){let t=game.turn()==="w"?"White":"Black",s=t+" to move";if(game.in_checkmate())s="Checkmate — "+(t==="White"?"Black":"White")+" wins!";else if(game.in_draw())s="Game drawn";else if(game.in_check())s+=" · Check!";document.getElementById("status").textContent=s}
+function updateHistory(){let h=document.getElementById("history");h.innerHTML="";game.history().forEach((m,i)=>{if(i%2===0){let li=document.createElement("li");li.textContent=(Math.floor(i/2)+1)+". "+m;h.appendChild(li)}else if(h.lastElementChild)h.lastElementChild.textContent+="   "+m})}
+function newGame(){game.reset();selected=null;drawBoard()}
+function undoMove(){game.undo();selected=null;drawBoard()}
+function flipBoard(){flipped=!flipped;drawBoard()}
+function openPlay(){document.getElementById("home").style.display="none";document.getElementById("play").classList.add("active");document.querySelectorAll(".navitem").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".navitem")[1].classList.add("active");if(!game)initGame();window.scrollTo(0,0)}
+function backHome(){document.getElementById("play").classList.remove("active");document.getElementById("home").style.display="block";document.querySelectorAll(".navitem").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".navitem")[0].classList.add("active");window.scrollTo(0,0)}
+let toastTimer;function showNotice(msg){const t=document.getElementById("toast");t.textContent=msg;t.style.display="block";clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.style.display="none",2800)}
+initGame();
 </script>
 </body>
 </html>

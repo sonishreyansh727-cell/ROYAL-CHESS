@@ -94,6 +94,42 @@ function drawBoard(){
  updateStatus();updateHistory();
 }
 function tapSquare(s){
+ if(!game || game.game_over() || game.turn()!=="w") return;
+
+ if(selected){
+  const m=game.move({from:selected,to:s,promotion:"q"});
+  if(m){
+   selected=null;
+   drawBoard();
+   if(!game.game_over()) setTimeout(computerMove,500);
+   return;
+  }
+ }
+
+ const p=game.get(s);
+ selected=p && p.color==="w" ? s : null;
+ drawBoard();
+}
+
+function computerMove(){
+ if(!game || game.game_over() || game.turn()!=="b") return;
+
+ const moves=game.moves({verbose:true});
+ if(!moves.length) return;
+
+ // Prefer captures and checks, otherwise choose a legal move.
+ moves.sort((a,b)=>{
+  const score=m=> (m.captured?10:0)+(m.san.includes("+")?3:0)+(m.san.includes("#")?100:0);
+  return score(b)-score(a);
+ });
+
+ const bestScore=(m)=>(m.captured?10:0)+(m.san.includes("+")?3:0);
+ const top=moves.filter(m=>bestScore(m)===bestScore(moves[0]));
+ const move=top[Math.floor(Math.random()*top.length)];
+
+ game.move({from:move.from,to:move.to,promotion:"q"});
+ drawBoard();
+}
  if(!game||game.game_over())return;
  if(selected){const m=game.move({from:selected,to:s,promotion:"q"});if(m){selected=null;drawBoard();return}}
  const p=game.get(s);selected=p&&p.color===game.turn()?s:null;drawBoard();

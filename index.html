@@ -6,6 +6,8 @@
 <meta name="theme-color" content="#090909">
 <title>ROYAL CHESS</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
 <style>
 *{box-sizing:border-box}
@@ -64,12 +66,14 @@ hr{opacity:.45}
 </head>
 
 <body>
+
 <header>
  <div class="logo">♛ ROYAL CHESS</div>
  <div class="guest">♟ GUEST PLAYER</div>
 </header>
 
 <main>
+
 <section id="home" class="page active">
  <div class="hero">
   <div class="eyebrow">WELCOME TO YOUR KINGDOM</div>
@@ -102,8 +106,8 @@ hr{opacity:.45}
 
  <div class="card">
   <div class="timerrow">
-   <div class="timer">WHITE<br><span id="whiteTime">05:00</span></div>
-   <div class="timer">BLACK<br><span id="blackTime">05:00</span></div>
+   <div class="timer">WHITE<br><span id="whiteTime">10:00</span></div>
+   <div class="timer">BLACK<br><span id="blackTime">10:00</span></div>
   </div>
 
   <div style="text-align:center">
@@ -131,6 +135,18 @@ hr{opacity:.45}
    <button class="btn2" onclick="flipBoard()">FLIP</button>
    <button class="btn2" onclick="saveGame()">SAVE</button>
   </div>
+ </div>
+
+ <div class="card" id="onlinePanel" style="margin-top:15px">
+  <h3>🌐 ONLINE MULTIPLAYER</h3>
+  <p class="note">Play a friend on another device using a six-character room code.</p>
+  <input id="onlineName" maxlength="18" placeholder="Your display name" value="Player" style="width:100%;padding:12px;background:#111;color:#f5e9c8;border:1px solid #80632c;border-radius:8px;margin:5px 0">
+  <input id="roomCode" maxlength="6" placeholder="Room code" autocapitalize="characters" style="width:100%;padding:12px;background:#111;color:#f5e9c8;border:1px solid #80632c;border-radius:8px;margin:5px 0;text-transform:uppercase">
+  <button class="btn" onclick="createOnlineRoom()">CREATE ROOM</button>
+  <button class="btn2" onclick="joinOnlineRoom()">JOIN ROOM</button>
+  <button class="btn2" onclick="leaveOnlineRoom()">LEAVE ROOM</button>
+  <p class="note" id="onlineStatus">Online play needs your Firebase project configuration.</p>
+  <p class="note" id="onlineRoomInfo"></p>
  </div>
 
  <div class="boardarea" style="margin-top:15px">
@@ -168,6 +184,7 @@ hr{opacity:.45}
   <p class="note">Practice king and pawn endings.</p>
  </div>
 </section>
+
 </main>
 
 <nav class="bottom">
@@ -180,397 +197,65 @@ hr{opacity:.45}
 
 <script>
 let game=null,selected=null,flipped=false,mode="computer";
-let clock={w:300,b:300},timer=null,finished=false;
+let clock={w:300,b:300},timer=null,finished=false,engine=null,engineReady=false;
+let engineBusy=false,lastAnalysis="";
 let savedStats;
-try{
- savedStats=JSON.parse(localStorage.getItem("royalStats")||'{"played":0,"wins":0,"losses":0,"draws":0}');
-}catch(e){
- savedStats={played:0,wins:0,losses:0,draws:0};
-}
+try{savedStats=JSON.parse(localStorage.getItem("royalStats")||'{"played":0,"wins":0,"losses":0,"draws":0}')}catch(e){savedStats={played:0,wins:0,losses:0,draws:0}}
 let captured={w:[],b:[]};
-
-const pieces={
- w:{k:"♔",q:"♕",r:"♖",b:"♗",n:"♘",p:"♙"},
- b:{k:"♚",q:"♛",r:"♜",b:"♝",n:"♞",p:"♟"}
-};
+const pieces={w:{k:"♔",q:"♕",r:"♖",b:"♗",n:"♘",p:"♙"},b:{k:"♚",q:"♛",r:"♜",b:"♝",n:"♞",p:"♟"}};
 const values={p:100,n:320,b:330,r:500,q:900,k:20000};
 
-function showPage(id){
- document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
- document.getElementById(id).classList.add('active');
- window.scrollTo(0,0);
-}
-
-function goHome(){
- stopTimer();
- saveGame();
- showPage('home');
-}
-
-function notice(msg){
- let t=document.getElementById('toast');
- t.textContent=msg;
- t.style.display='block';
- clearTimeout(window.toastTimer);
- window.toastTimer=setTimeout(()=>t.style.display='none',3000);
-}
-
-function updateStats(){
- ['played','wins','losses','draws'].forEach(k=>{
-  let el=document.getElementById(k);
-  if(el)el.textContent=savedStats[k]||0;
- });
- localStorage.setItem('royalStats',JSON.stringify(savedStats));
-}
-
-function openGame(type){
- if(typeof Chess==='undefined'){
-  notice('Chess rules library needs an internet connection.');
-  return;
- }
- stopTimer();
- mode=type;
- game=new Chess();
- selected=null;
- flipped=false;
- finished=false;
- captured={w:[],b:[]};
- document.getElementById('modeLabel').textContent=type==='computer'?'Computer Match':'Two Player';
- resetClock();
- showPage('gamePage');
- drawBoard();
- startTimer();
- saveGame();
-}
-
-function resetClock(){
- let t=document.getElementById('timeMode').value;
- let mins={bullet:1,blitz:5,rapid:10,classical:30}[t]||5;
- clock={w:mins*60,b:mins*60};
- drawClock();
-}
-
-function changeTimeMode(){
- if(!game)return;
- if(game.history().length){
-  if(!confirm('Changing the time control will restart this game. Continue?'))return;
-  openGame(mode);
- }else{
-  resetClock();
-  saveGame();
- }
-}
-
-function drawClock(){
- document.getElementById('whiteTime').textContent=formatTime(clock.w);
- document.getElementById('blackTime').textContent=formatTime(clock.b);
-}
-
-function formatTime(s){
- s=Math.max(0,Math.floor(s));
- return Math.floor(s/60).toString().padStart(2,'0')+':'+(s%60).toString().padStart(2,'0');
-}
-
-function startTimer(){
- stopTimer();
- timer=setInterval(()=>{
-  if(!game||finished||!document.getElementById('gamePage').classList.contains('active'))return;
-  let side=game.turn();
-  clock[side]=Math.max(0,clock[side]-1);
-  drawClock();
-  saveGame();
-
-  if(clock[side]<=0){
-   finished=true;
-   stopTimer();
-   notice((side==='w'?'White':'Black')+' lost on time!');
-   if(mode==='computer')recordResult(side==='w'?'loss':'win');
-   else notice('Time expired. Local game result is not added to personal stats.');
-   localStorage.removeItem('royalSavedGame');
-  }
- },1000);
-}
-
-function stopTimer(){
- if(timer){
-  clearInterval(timer);
-  timer=null;
- }
-}
-
-function drawBoard(){
- if(!game)return;
- let board=document.getElementById('board');
- board.innerHTML='';
- let position=game.board();
- let legal=selected?game.moves({square:selected,verbose:true}):[];
-
- for(let r=0;r<8;r++){
-  for(let c=0;c<8;c++){
-   let rr=flipped?7-r:r;
-   let cc=flipped?7-c:c;
-   let name='abcdefgh'[cc]+(8-rr);
-   let sq=document.createElement('button');
-   sq.className='square '+((rr+cc)%2===0?'light':'dark');
-   sq.type='button';
-
-   let piece=position[rr][cc];
-   if(piece){
-    sq.textContent=pieces[piece.color][piece.type];
-    sq.classList.add(piece.color==='w'?'whitepiece':'blackpiece');
-   }
-
-   if(selected===name)sq.classList.add('selected');
-   if(legal.some(m=>m.to===name))sq.classList.add(piece?'capture':'legal');
-
-   sq.addEventListener('click',()=>tapSquare(name));
-   board.appendChild(sq);
-  }
- }
- updateStatus();
- updateHistory();
- updateCaptured();
-}
-
+function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0)}
+function goHome(){stopTimer();saveGame();showPage('home')}
+function notice(msg){let t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>t.style.display='none',3000)}
+function updateStats(){['played','wins','losses','draws'].forEach(k=>{let el=document.getElementById(k);if(el)el.textContent=savedStats[k]||0});localStorage.setItem('royalStats',JSON.stringify(savedStats))}
+function openGame(type){if(typeof Chess==='undefined'){notice('Chess rules library needs an internet connection.');return}stopTimer();mode=type;game=new Chess();selected=null;flipped=false;finished=false;captured={w:[],b:[]};document.getElementById('modeLabel').textContent=type==='computer'?'Computer Match':'Two Player';resetClock();showPage('gamePage');drawBoard();startTimer();saveGame()}
+function resetClock(){let t=document.getElementById('timeMode').value;let mins={bullet:1,blitz:5,rapid:10,classical:30}[t]||5;clock={w:mins*60,b:mins*60};drawClock()}
+function changeTimeMode(){if(!game)return;if(game.history().length){if(!confirm('Changing the time control will restart this game. Continue?'))return;openGame(mode)}else{resetClock();saveGame()}}
+function drawClock(){document.getElementById('whiteTime').textContent=formatTime(clock.w);document.getElementById('blackTime').textContent=formatTime(clock.b)}
+function formatTime(s){s=Math.max(0,Math.floor(s));return Math.floor(s/60).toString().padStart(2,'0')+':'+(s%60).toString().padStart(2,'0')}
+function startTimer(){stopTimer();timer=setInterval(()=>{if(!game||finished||mode==='online'||!document.getElementById('gamePage').classList.contains('active'))return;let side=game.turn();clock[side]=Math.max(0,clock[side]-1);drawClock();saveGame();if(clock[side]<=0){finished=true;stopTimer();notice((side==='w'?'White':'Black')+' lost on time!');if(mode==='computer')recordResult(side==='w'?'loss':'win');else notice('Time expired. Local game result is not added to personal stats.');localStorage.removeItem('royalSavedGame')}},1000)}
+function stopTimer(){if(timer){clearInterval(timer);timer=null}}
+function drawBoard(){if(!game)return;let board=document.getElementById('board');board.innerHTML='';let position=game.board();let legal=selected?game.moves({square:selected,verbose:true}):[];for(let r=0;r<8;r++)for(let c=0;c<8;c++){let rr=flipped?7-r:r,cc=flipped?7-c:c,name='abcdefgh'[cc]+(8-rr),sq=document.createElement('button');sq.className='square '+((rr+cc)%2===0?'light':'dark');sq.type='button';let piece=position[rr][cc];if(piece){sq.textContent=pieces[piece.color][piece.type];sq.classList.add(piece.color==='w'?'whitepiece':'blackpiece')}if(selected===name)sq.classList.add('selected');if(legal.some(m=>m.to===name))sq.classList.add(piece?'capture':'legal');sq.addEventListener('click',()=>tapSquare(name));board.appendChild(sq)}updateStatus();updateHistory();updateCaptured()}
 function tapSquare(square){
  if(!game||game.game_over()||finished)return;
  if(mode==='computer'&&game.turn()==='b')return;
-
+ if(mode==='online'&&(!onlineRoom||game.turn()!==onlineColor))return;
  if(selected){
-  let move=game.move({from:selected,to:square,promotion:'q'});
+  const move=game.move({from:selected,to:square,promotion:'q'});
   if(move){
    if(move.captured)captured[move.color].push(pieces[move.color==='w'?'b':'w'][move.captured]);
-   selected=null;
-   drawBoard();
-   saveGame();
-
-   if(game.game_over()){
-    endGame();
-    return;
+   selected=null;drawBoard();saveGame();
+   if(mode==='online'){
+    sendOnlineMove(move).catch(err=>notice('Move sync failed: '+err.message));
    }
+   if(game.game_over()){if(mode==='online')finishOnlineGame();else endGame();return;}
    if(mode==='computer')setTimeout(computerMove,350);
    return;
   }
  }
-
- let p=game.get(square);
- selected=p&&p.color===game.turn()&&(mode==='local'||p.color==='w')?square:null;
- drawBoard();
+ const p=game.get(square);
+ const canSelect=p&&p.color===game.turn()&&(mode==='local'||(mode==='computer'&&p.color==='w')||(mode==='online'&&p.color===onlineColor));
+ selected=canSelect?square:null;drawBoard();
 }
 
-// Basic built-in opponent. This is NOT Stockfish.
-function computerMove(){
- if(!game||game.game_over()||finished||game.turn()!=='b')return;
+// Fallback opponent only. This is deliberately labelled as a basic built-in bot, not Stockfish.
+function computerMove(){if(!game||game.game_over()||finished||game.turn()!=='b')return;let moves=game.moves({verbose:true});if(!moves.length)return;let level=document.getElementById('difficulty').value;let scored=moves.map(m=>{let score=(m.captured?values[m.captured]:0)+(m.san.includes('+')?35:0)+(m.san.includes('#')?10000:0);return{move:m,score}}).sort((a,b)=>b.score-a.score);let count={easy:Math.min(10,scored.length),medium:Math.min(5,scored.length),hard:Math.min(3,scored.length),expert:1}[level]||5;let pool=scored.slice(0,count);let choice=pool[Math.floor(Math.random()*pool.length)].move;let result=game.move({from:choice.from,to:choice.to,promotion:'q'});if(result&&result.captured)captured.b.push(pieces.w[result.captured]);drawBoard();saveGame();if(game.game_over())endGame()}
+function updateStatus(){let text=game.turn()==='w'?'White to move':'Black to move';if(mode==='computer'&&game.turn()==='b')text='Computer is thinking...';if(game.in_check())text+=' · CHECK!';if(game.game_over())text='GAME OVER';document.getElementById('status').textContent=text}
+function updateHistory(){let list=document.getElementById('history');list.innerHTML='';game.history().forEach((m,i)=>{if(i%2===0){let li=document.createElement('li');li.textContent=(Math.floor(i/2)+1)+'. '+m;list.appendChild(li)}else if(list.lastElementChild)list.lastElementChild.textContent+='   '+m})}
+function updateCaptured(){document.getElementById('whiteCaptured').textContent=captured.w.join(' ')||'—';document.getElementById('blackCaptured').textContent=captured.b.join(' ')||'—'}
+function endGame(){stopTimer();finished=true;if(mode==='online'){finishOnlineGame();return;}if(game.in_checkmate()){if(mode==='computer')recordResult(game.turn()==='b'?'win':'loss');notice('Checkmate! '+(game.turn()==='b'?'White wins.':'Black wins.'))}else{if(mode==='computer')recordResult('draw');notice('Game drawn!')}localStorage.removeItem('royalSavedGame')}
+function recordResult(result){savedStats.played=(savedStats.played||0)+1;if(result==='win')savedStats.wins=(savedStats.wins||0)+1;else if(result==='loss')savedStats.losses=(savedStats.losses||0)+1;else savedStats.draws=(savedStats.draws||0)+1;updateStats()}
+function newGame(){if(confirm('Start a new game?'))openGame(mode)}
+function undoMove(){if(!game||finished)return;if(mode==='computer'){if(game.history().length>=2){game.undo();game.undo()}else if(game.history().length)game.undo()}else game.undo();selected=null;rebuildCaptured();drawBoard();saveGame()}
+function rebuildCaptured(){captured={w:[],b:[]};let replay=new Chess();game.history({verbose:true}).forEach(m=>{if(m.captured)captured[m.color].push(pieces[m.color==='w'?'b':'w'][m.captured]);replay.move(m.san)})}
+function flipBoard(){flipped=!flipped;drawBoard()}
+function saveGame(){if(!game)return;let data={pgn:game.pgn(),mode,clock,flipped,captured,timeMode:document.getElementById('timeMode').value,difficulty:document.getElementById('difficulty').value};localStorage.setItem('royalSavedGame',JSON.stringify(data))}
+function resumeGame(){let raw=localStorage.getItem('royalSavedGame');if(!raw){notice('No saved game found.');return}try{let d=JSON.parse(raw);let restored=new Chess();if(d.pgn)restored.load_pgn(d.pgn);else if(d.fen)restored.load(d.fen);game=restored;mode=d.mode==='local'?'local':'computer';clock=d.clock||{w:300,b:300};flipped=!!d.flipped;captured=d.captured||{w:[],b:[]};finished=game.game_over();selected=null;if(d.timeMode)document.getElementById('timeMode').value=d.timeMode;if(d.difficulty)document.getElementById('difficulty').value=d.difficulty;document.getElementById('modeLabel').textContent=mode==='computer'?'Computer Match':'Two Player';showPage('gamePage');drawBoard();drawClock();if(!finished)startTimer();notice('Game resumed!')}catch(e){notice('Saved game could not be loaded. Start a new game.')}}
+function exportPGN(){if(game)downloadFile('royal-chess-game.pgn',game.pgn(),'application/x-chess-pgn')}
+function exportFEN(){if(game)downloadFile('royal-chess-position.fen',game.fen(),'text/plain')}
+function downloadFile(name,content,type){let blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 
- let moves=game.moves({verbose:true});
- if(!moves.length)return;
-
- let level=document.getElementById('difficulty').value;
- let scored=moves.map(m=>{
-  let score=(m.captured?values[m.captured]:0)
-   +(m.san.includes('+')?35:0)
-   +(m.san.includes('#')?10000:0);
-  return{move:m,score};
- }).sort((a,b)=>b.score-a.score);
-
- let count={
-  easy:Math.min(10,scored.length),
-  medium:Math.min(5,scored.length),
-  hard:Math.min(3,scored.length),
-  expert:1
- }[level]||5;
-
- let pool=scored.slice(0,count);
- let choice=pool[Math.floor(Math.random()*pool.length)].move;
-
- let result=game.move({
-  from:choice.from,
-  to:choice.to,
-  promotion:'q'
- });
-
- if(result&&result.captured)captured.b.push(pieces.w[result.captured]);
-
- drawBoard();
- saveGame();
-
- if(game.game_over())endGame();
-}
-
-function updateStatus(){
- let text=game.turn()==='w'?'White to move':'Black to move';
- if(mode==='computer'&&game.turn()==='b')text='Computer is thinking...';
- if(game.in_check())text+=' · CHECK!';
- if(game.game_over())text='GAME OVER';
- document.getElementById('status').textContent=text;
-}
-
-function updateHistory(){
- let list=document.getElementById('history');
- list.innerHTML='';
-
- game.history().forEach((m,i)=>{
-  if(i%2===0){
-   let li=document.createElement('li');
-   li.textContent=(Math.floor(i/2)+1)+'. '+m;
-   list.appendChild(li);
-  }else if(list.lastElementChild){
-   list.lastElementChild.textContent+='   '+m;
-  }
- });
-}
-
-function updateCaptured(){
- document.getElementById('whiteCaptured').textContent=captured.w.join(' ')||'—';
- document.getElementById('blackCaptured').textContent=captured.b.join(' ')||'—';
-}
-
-function endGame(){
- stopTimer();
- finished=true;
-
- if(game.in_checkmate()){
-  if(mode==='computer')recordResult(game.turn()==='b'?'win':'loss');
-  notice('Checkmate! '+(game.turn()==='b'?'White wins.':'Black wins.'));
- }else{
-  if(mode==='computer')recordResult('draw');
-  notice('Game drawn!');
- }
-
- localStorage.removeItem('royalSavedGame');
-}
-
-function recordResult(result){
- savedStats.played=(savedStats.played||0)+1;
-
- if(result==='win')savedStats.wins=(savedStats.wins||0)+1;
- else if(result==='loss')savedStats.losses=(savedStats.losses||0)+1;
- else savedStats.draws=(savedStats.draws||0)+1;
-
- updateStats();
-}
-
-function newGame(){
- if(confirm('Start a new game?'))openGame(mode);
-}
-
-function undoMove(){
- if(!game||finished)return;
-
- if(mode==='computer'){
-  if(game.history().length>=2){
-   game.undo();
-   game.undo();
-  }else if(game.history().length){
-   game.undo();
-  }
- }else{
-  game.undo();
- }
-
- selected=null;
- rebuildCaptured();
- drawBoard();
- saveGame();
-}
-
-function rebuildCaptured(){
- captured={w:[],b:[]};
- let replay=new Chess();
-
- game.history({verbose:true}).forEach(m=>{
-  if(m.captured){
-   captured[m.color].push(pieces[m.color==='w'?'b':'w'][m.captured]);
-  }
-  replay.move(m.san);
- });
-}
-
-function flipBoard(){
- flipped=!flipped;
- drawBoard();
-}
-
-function saveGame(){
- if(!game)return;
-
- let data={
-  pgn:game.pgn(),
-  mode,
-  clock,
-  flipped,
-  captured,
-  timeMode:document.getElementById('timeMode').value,
-  difficulty:document.getElementById('difficulty').value
- };
-
- localStorage.setItem('royalSavedGame',JSON.stringify(data));
-}
-
-function resumeGame(){
- let raw=localStorage.getItem('royalSavedGame');
-
- if(!raw){
-  notice('No saved game found.');
-  return;
- }
-
- try{
-  let d=JSON.parse(raw);
-  let restored=new Chess();
-
-  if(d.pgn)restored.load_pgn(d.pgn);
-  else if(d.fen)restored.load(d.fen);
-
-  game=restored;
-  mode=d.mode==='local'?'local':'computer';
-  clock=d.clock||{w:300,b:300};
-  flipped=!!d.flipped;
-  captured=d.captured||{w:[],b:[]};
-  finished=game.game_over();
-  selected=null;
-
-  if(d.timeMode)document.getElementById('timeMode').value=d.timeMode;
-  if(d.difficulty)document.getElementById('difficulty').value=d.difficulty;
-
-  document.getElementById('modeLabel').textContent=mode==='computer'?'Computer Match':'Two Player';
-
-  showPage('gamePage');
-  drawBoard();
-  drawClock();
-
-  if(!finished)startTimer();
-
-  notice('Game resumed!');
- }catch(e){
-  notice('Saved game could not be loaded. Start a new game.');
- }
-}
-
-function exportPGN(){
- if(game)downloadFile('royal-chess-game.pgn',game.pgn(),'application/x-chess-pgn');
-}
-
-function exportFEN(){
- if(game)downloadFile('royal-chess-position.fen',game.fen(),'text/plain');
-}
-
-function downloadFile(name,content,type){
- let blob=new Blob([content],{type});
- let url=URL.createObjectURL(blob);
- let a=document.createElement('a');
-
- a.href=url;
- a.download=name;
- document.body.appendChild(a);
- a.click();
- a.remove();
-
- setTimeout(()=>URL.revokeObjectURL(url),1000);
-}
-
-window.addEventListener('beforeunload',saveGame);
-updateStats();
-</script>
-</body>
-</html>
+// Real Stockfish connection: put stockfish-19-lite-single.js AND its matching WASM file in the same GitHub Pages folder as index.html.
+function initEngine(){let status=document.getElementById('engineStatus');if(!status)return;try{engine=new Worker('stockfish-19-lite-single.js');engine.onmessage=e=>{let line=String(e.data||'');if(line==='uciok'||line==='readyok'){engineReady=true;status.textContent='Stockfish connected and ready.'}if(line.startsWith('info ')&&line.includes(' score ')){let m=line.match(/ score (cp|mate) (-?\d+)/);if(m){let score=m[1]==='mate'?'Mate in '+m[2]:(Number(m[2])/100).toFixed(2);lastAnalysis='Evaluation (White perspective): '+score;document.getElementById('analysisResult').textContent=lastAnalysis}}if(line.startsWith('bestmove ')){engineBusy=false;let uci=line.split(/\s+/)[1];if(uci&&uci!=='(none)'){let from=uci.slice(0,2),to=uci.slice(2,4),promo=uci[4]||'';document.getElementById('analysisResult').textContent=(lastAnalysis?lastAnalysis+' · ':'')+'Best move: '+from+' → '+to+(promo?' = '+promo.toUpperCase():'')}}};engine.onerror=()=>{engineReady=false;status.textContent='Stockfish files missing or failed to load. Check both engine files and filenames.'};engine.postMessage('uci');engine.postMessage('isready')}catch(e){status.textContent='Stockfish could not start. Add the matching JS and WASM engine files beside index.html.'}}
+function analyzePosition(){if(!game)return;if(!engine){initEngine()}if(!engine){notice('Stockfish is not available yet.');return}if(!engineReady){notice('Stockfish is starting. Try again in a moment.');return}if(engin

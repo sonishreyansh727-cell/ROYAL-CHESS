@@ -130,10 +130,7 @@ function computerMove(){
  game.move({from:move.from,to:move.to,promotion:"q"});
  drawBoard();
 }
- if(!game||game.game_over())return;
- if(selected){const m=game.move({from:selected,to:s,promotion:"q"});if(m){selected=null;drawBoard();return}}
- const p=game.get(s);selected=p&&p.color===game.turn()?s:null;drawBoard();
-}
+ 
 function updateStatus(){let t=game.turn()==="w"?"White":"Black",s=t+" to move";if(game.in_checkmate())s="Checkmate — "+(t==="White"?"Black":"White")+" wins!";else if(game.in_draw())s="Game drawn";else if(game.in_check())s+=" · Check!";document.getElementById("status").textContent=s}
 function updateHistory(){let h=document.getElementById("history");h.innerHTML="";game.history().forEach((m,i)=>{if(i%2===0){let li=document.createElement("li");li.textContent=(Math.floor(i/2)+1)+". "+m;h.appendChild(li)}else if(h.lastElementChild)h.lastElementChild.textContent+="   "+m})}
 function newGame(){game.reset();selected=null;drawBoard()}
